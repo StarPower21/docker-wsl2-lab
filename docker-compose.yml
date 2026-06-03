@@ -50,3 +50,49 @@ services:
       - ./jupyter:/home/jovyan/work
     command: start-notebook.sh --NotebookApp.token=''
 
+# --- NUEVOS SERVICIOS PARA EL LABORATORIO DE SISTEMAS OPERATIVOS ---
+  postgres-lab:
+    image: postgres:15-alpine
+    container_name: postgres-lab-container
+    environment:
+      POSTGRES_USER: lab_user
+      POSTGRES_PASSWORD: lab_password
+      POSTGRES_DB: lab_os_db
+    volumes:
+      - postgres_lab_data:/var/lib/postgresql/data
+      - ./services/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - lab_internal_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'        # Restringe el uso a máximo la mitad de un núcleo de CPU
+          memory: 256M       # Límite estricto de memoria RAM física
+
+  nextjs-lab:
+    build:
+      context: ./services/nextjs-app
+      dockerfile: Dockerfile
+    container_name: nextjs-lab-container
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgres://lab_user:lab_password@postgres-lab:5432/lab_os_db
+      NODE_ENV: production
+    depends_on:
+      - postgres-lab
+    networks:
+      - lab_internal_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'        # Restringe a la mitad de un núcleo de CPU
+          memory: 300M       # Si Next.js excede esto, el sistema operativo actuará
+
+networks:
+  lab_internal_network:
+    driver: bridge
+
+volumes:
+  postgres_lab_data:
+    driver: local
