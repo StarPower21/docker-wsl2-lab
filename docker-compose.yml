@@ -89,6 +89,19 @@ services:
           cpus: '0.5'        # Restringe a la mitad de un núcleo de CPU
           memory: 300M       # Si Next.js excede esto, el sistema operativo actuará
 
+
+  stress-ai:
+    build:
+      context: ./services/stress-ai
+      dockerfile: Dockerfile
+    container_name: stress-ai-lab
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 5G
+
+
 networks:
   lab_internal_network:
     driver: bridge
@@ -96,3 +109,4 @@ networks:
 volumes:
   postgres_lab_data:
     driver: local
+
